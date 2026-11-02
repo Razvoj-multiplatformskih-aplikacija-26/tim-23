@@ -1,0 +1,41 @@
+name: mobile
+description: Kap mobilna aplikacija za davaoce krvi.
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.0
+resolution: workspace
+
+dependencies:
+  blocs:
+    path: ../../packages/blocs
+  domain:
+    path: ../../packages/domain
+  flutter:
+    sdk: flutter
+  flutter_bloc: 9.1.1
+  flutter_localizations:
+    sdk: flutter
+  go_router: 18.0.2
+  ui:
+    path: ../../packages/ui
+
+dev_dependencies:
+  flutter_launcher_icons: 0.14.4
+  flutter_lints: 6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+
+# Ikonica aplikacije: posle izmene slike pokrenuti
+#   dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  image_path: assets/icon/icon.png
+  adaptive_icon_background: "#C62828"
+  adaptive_icon_foreground: assets/icon/icon_foreground.png
