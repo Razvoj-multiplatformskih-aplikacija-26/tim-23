@@ -1,0 +1,11 @@
+name: api_contract
+description: Kap HTTP ugovor između klijenata i servera - putanje, kodovi grešaka i oblik JSON-a. Ne uvozi domen, Flutter ni dart:io.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+resolution: workspace
+
+dev_dependencies:
+  test: 1.31.1
