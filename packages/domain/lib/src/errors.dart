@@ -128,7 +128,12 @@ final class InvalidTransition extends DomainError {
   String toString() => 'InvalidTransition(${from.runtimeType} -> ${to.runtimeType})';
 }
 
-/// Traženi zapis ne postoji.
+/// Traženi zapis ne postoji (ili korisnik nema pravo da ga vidi).
 final class NotFound extends DomainError {
   const NotFound();
+}
+
+/// Korisnik nema pravo na ovu akciju.
+final class NotAllowed extends DomainError {
+  const NotAllowed();
 }
