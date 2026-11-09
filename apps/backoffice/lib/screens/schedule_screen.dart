@@ -121,7 +121,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final message = switch (notice) {
       StaffActionDone(:final action) => staffActionDoneMessage(action),
       StaffActionRejected(:final error) => errorMessage(error),
-      StaffActionFailed() => failureMessage,
+      StaffActionFailed(:final cause) => failureMessageFor(cause),
     };
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     _bloc.add(const DriveScheduleNoticeAcknowledged());
@@ -190,6 +190,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 icon: const Icon(Icons.keyboard_outlined),
               ),
               DemoMenu(onReload: _reload),
+              const _UserMenu(),
               const SizedBox(width: 8),
             ],
           ),
@@ -216,7 +217,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             child: BlocBuilder<DriveScheduleBloc, DriveScheduleState>(
               builder: (context, state) => switch (state) {
                 DriveScheduleLoading() => const LoadingView(),
-                DriveScheduleFailure() => FailureView(onRetry: _reload),
+                DriveScheduleFailure(:final cause) => FailureView(message: failureMessageFor(cause), onRetry: _reload),
                 DriveScheduleEmpty(:final drive) => EmptyView(
                   title: 'Na ovoj akciji nema zakazanih termina',
                   message: '${drive.title}, ${formatLongDate(drive.start)}',
@@ -351,6 +352,30 @@ class _DriveHeader extends StatelessWidget {
         Text(
           '${state.appointments.length} termina · $free slobodnih mesta · prečice: ?',
           style: theme.textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+}
+
+/// Ko je prijavljen i odjava.
+class _UserMenu extends StatelessWidget {
+  const _UserMenu();
+
+  @override
+  Widget build(BuildContext context) {
+    final user = context.read<User>();
+    return PopupMenuButton<void>(
+      tooltip: '${user.name} · ${roleLabel(user.role)}',
+      icon: const Icon(Icons.account_circle_outlined),
+      itemBuilder: (_) => [
+        PopupMenuItem<void>(
+          enabled: false,
+          child: ListTile(title: Text(user.name), subtitle: Text(roleLabel(user.role))),
+        ),
+        PopupMenuItem<void>(
+          onTap: () => context.read<SessionBloc>().add(const SessionLogOutRequested()),
+          child: const ListTile(leading: Icon(Icons.logout), title: Text('Odjavi se')),
         ),
       ],
     );

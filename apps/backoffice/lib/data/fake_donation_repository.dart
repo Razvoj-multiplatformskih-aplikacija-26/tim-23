@@ -1,13 +1,13 @@
 import 'package:blocs/blocs.dart';
+import 'package:demo_data/demo_data.dart';
 import 'package:domain/domain.dart';
-
-import 'seed.dart';
 
 /// Lažna implementacija porta: podaci žive u memoriji aplikacije.
 ///
 /// Svaki zahtev čeka [latency] (da se vidi učitavanje). [failingRequests]
 /// i [emptyResponses] su brojači za demo: sledeći zahtev ne uspe, odnosno
-/// sledeća lista stigne prazna. Od KT2 ovu klasu zamenjuje HTTP adapter.
+/// sledeća lista stigne prazna. Nad serverom je zamenjuje HttpDonationRepository
+/// (paket api_client); koristi se za testove ekrana.
 final class FakeDonationRepository implements DonationRepository {
   FakeDonationRepository({required this.clock, this.latency = const Duration(milliseconds: 300)}) {
     final seed = Seed(clock());
@@ -109,25 +109,25 @@ final class FakeDonationRepository implements DonationRepository {
   }
 
   @override
-  Future<Appointment> saveAppointment(Appointment appointment) async {
+  Future<Result<Appointment>> saveAppointment(Appointment appointment) async {
     await _roundTrip();
     final index = _appointments.indexWhere((a) => a.id == appointment.id);
-    if (index < 0) throw const RepositoryException('Termin ne postoji');
+    if (index < 0) return const Failure(NotFound());
     _appointments[index] = appointment;
     // Posle davanja menja se i datum poslednjeg davanja davaoca.
     if (appointment.status case Donated(:final at)) {
       final donorIndex = _donors.indexWhere((d) => d.id == appointment.donorId);
       if (donorIndex >= 0) _donors[donorIndex] = _donors[donorIndex].copyWith(lastDonation: at);
     }
-    return appointment;
+    return Success(appointment);
   }
 
   @override
-  Future<Donor> saveDonor(Donor donor) async {
+  Future<Result<Donor>> saveDonor(Donor donor) async {
     await _roundTrip();
     final index = _donors.indexWhere((d) => d.id == donor.id);
-    if (index < 0) throw const RepositoryException('Davalac ne postoji');
+    if (index < 0) return const Failure(NotFound());
     _donors[index] = donor;
-    return donor;
+    return Success(donor);
   }
 }
