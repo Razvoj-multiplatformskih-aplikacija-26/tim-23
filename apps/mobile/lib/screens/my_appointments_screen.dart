@@ -19,7 +19,7 @@ class MyAppointmentsScreen extends StatelessWidget {
       AppointmentConfirmed() => 'Dolazak je potvrđen. Vidimo se!',
       AppointmentCancelled() => 'Termin je otkazan.',
       ActionRejected(:final error) => errorMessage(error),
-      ActionFailed() => failureMessage,
+      ActionFailed(:final cause) => failureMessageFor(cause),
     };
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     context.read<MyAppointmentsBloc>().add(const MyAppointmentsNoticeAcknowledged());
@@ -40,7 +40,7 @@ class MyAppointmentsScreen extends StatelessWidget {
         listener: (context, state) => _onNotice(context, (state as MyAppointmentsLoaded).notice!),
         builder: (context, state) => switch (state) {
           MyAppointmentsLoading() => const LoadingView(),
-          MyAppointmentsFailure() => FailureView(onRetry: () => _reload(context)),
+          MyAppointmentsFailure(:final cause) => FailureView(message: failureMessageFor(cause), onRetry: () => _reload(context)),
           MyAppointmentsEmpty() => EmptyView(
             title: 'Još nemate termina',
             message: 'Izaberite akciju i zakažite prvo davanje krvi.',

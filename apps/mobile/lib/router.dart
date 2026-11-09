@@ -38,12 +38,13 @@ GoRouter createRouter() {
                     parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
                       final deps = context.read<AppDependencies>();
+                      // Davalac je onaj ko je prijavljen (User daje app.dart posle prijave).
                       // Lokalni Bloc: nastaje sa ovom rutom i zatvara se kad se ona napusti.
                       return BlocProvider(
                         create: (_) => BookingBloc(
                           repository: deps.repository,
                           clock: deps.clock,
-                          donorId: deps.donorId,
+                          donorId: context.read<User>().donorId,
                           driveId: DriveId(state.pathParameters['driveId']!),
                         )..add(const BookingRequested()),
                         child: const DriveDetailScreen(),

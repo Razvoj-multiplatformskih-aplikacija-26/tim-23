@@ -20,8 +20,8 @@ class DriveDetailScreen extends StatelessWidget {
         context.go('/termini');
       case BookingRejected(:final error):
         messenger.showSnackBar(SnackBar(content: Text(errorMessage(error))));
-      case BookingFailed():
-        messenger.showSnackBar(const SnackBar(content: Text(failureMessage)));
+      case BookingFailed(:final cause):
+        messenger.showSnackBar(SnackBar(content: Text(failureMessageFor(cause))));
     }
   }
 
@@ -34,7 +34,8 @@ class DriveDetailScreen extends StatelessWidget {
         listener: (context, state) => _onNotice(context, (state as BookingLoaded).notice!),
         builder: (context, state) => switch (state) {
           BookingLoading() => const LoadingView(),
-          BookingFailure() => FailureView(
+          BookingFailure(:final cause) => FailureView(
+            message: failureMessageFor(cause),
             onRetry: () => context.read<BookingBloc>().add(const BookingRequested()),
           ),
           BookingNotFound() => const EmptyView(title: 'Akcija nije pronađena', icon: Icons.search_off),

@@ -38,7 +38,8 @@ class AppointmentDetailScreen extends StatelessWidget {
       body: BlocBuilder<MyAppointmentsBloc, MyAppointmentsState>(
         builder: (context, state) => switch (state) {
           MyAppointmentsLoading() => const LoadingView(),
-          MyAppointmentsFailure() => FailureView(
+          MyAppointmentsFailure(:final cause) => FailureView(
+            message: failureMessageFor(cause),
             onRetry: () => context.read<MyAppointmentsBloc>().add(const MyAppointmentsRequested()),
           ),
           MyAppointmentsEmpty() => const EmptyView(title: 'Termin nije pronađen', icon: Icons.search_off),

@@ -16,7 +16,7 @@ class ProfileScreen extends StatelessWidget {
     final message = switch (notice) {
       ProfileSaved() => 'Profil je sačuvan.',
       ProfileRejected(:final error) => errorMessage(error),
-      ProfileSaveFailed() => failureMessage,
+      ProfileSaveFailed(:final cause) => failureMessageFor(cause),
     };
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     if (notice is ProfileSaved) context.read<MyAppointmentsBloc>().add(const MyAppointmentsRefreshed());
@@ -26,7 +26,17 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Moj profil')),
+      appBar: AppBar(
+        title: const Text('Moj profil'),
+        actions: [
+          // Odjava briše prijavu iz bezbednog skladišta i vraća na ekran za prijavu.
+          IconButton(
+            tooltip: 'Odjavi se',
+            icon: const Icon(Icons.logout),
+            onPressed: () => context.read<SessionBloc>().add(const SessionLogOutRequested()),
+          ),
+        ],
+      ),
       body: BlocConsumer<ProfileBloc, ProfileState>(
         listenWhen: (previous, current) => current is ProfileLoaded && current.notice != null,
         listener: (context, state) => _onNotice(context, (state as ProfileLoaded).notice!),
@@ -36,7 +46,10 @@ class ProfileScreen extends StatelessWidget {
             (previous is ProfileLoaded && current is ProfileLoaded && previous.saving != current.saving),
         builder: (context, state) => switch (state) {
           ProfileLoading() => const LoadingView(),
-          ProfileFailure() => FailureView(onRetry: () => context.read<ProfileBloc>().add(const ProfileRequested())),
+          ProfileFailure(:final cause) => FailureView(
+            message: failureMessageFor(cause),
+            onRetry: () => context.read<ProfileBloc>().add(const ProfileRequested()),
+          ),
           final ProfileLoaded loaded => _ProfileForm(donor: loaded.donor, saving: loaded.saving),
         },
       ),

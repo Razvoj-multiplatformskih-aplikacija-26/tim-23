@@ -27,7 +27,7 @@ class DrivesScreen extends StatelessWidget {
       body: BlocBuilder<DrivesBloc, DrivesState>(
         builder: (context, state) => switch (state) {
           DrivesLoading() => const LoadingView(),
-          DrivesFailure() => FailureView(onRetry: () => _reload(context)),
+          DrivesFailure(:final cause) => FailureView(message: failureMessageFor(cause), onRetry: () => _reload(context)),
           DrivesEmpty() => EmptyView(
             title: 'Nema predstojećih akcija',
             message: 'Nove akcije se objavljuju svake nedelje.',
