@@ -3,6 +3,7 @@
 library;
 
 export 'src/kap_logo.dart';
+export 'src/login_screen.dart';
 export 'src/state_views.dart';
 export 'src/status_badge.dart';
 export 'src/texts.dart';

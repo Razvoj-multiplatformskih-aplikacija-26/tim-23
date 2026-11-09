@@ -1,3 +1,4 @@
+import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
 
 /// Svi tekstovi za korisnika su ovde, na srpskom. Domen vraća grešku kao tip,
@@ -19,6 +20,7 @@ String errorMessage(DomainError error) => switch (error) {
   InvalidDeferralReason(:final min, :final max) => 'Razlog mora imati od $min do $max znakova.',
   InvalidTransition() => 'Ova promena nije dozvoljena u trenutnom stanju termina.',
   NotFound() => 'Zapis nije pronađen.',
+  NotAllowed() => 'Nemate pravo na ovu akciju.',
 };
 
 String statusLabel(AppointmentStatus status) => switch (status) {
@@ -72,8 +74,29 @@ String staffActionDoneMessage(StaffAction action) => switch (action) {
   StaffAction.cancel => 'Termin je otkazan.',
 };
 
-/// Poruka kada podaci nisu stigli (nema mreže, server ne odgovara).
+/// Poruka kada podaci nisu stigli, a razlog nije poznat.
 const failureMessage = 'Podaci trenutno nisu dostupni. Proverite vezu i pokušajte ponovo.';
+
+const serverUnreachableMessage = 'Nema veze sa serverom. Proverite vezu i pokušajte ponovo.';
+
+const sessionExpiredMessage = 'Prijava je istekla. Prijavite se ponovo.';
+
+/// Poruka za grešku pristupa podacima, bez tehničkog teksta.
+String failureMessageFor(Object? cause) => switch (cause) {
+  RepositoryException(failure: RepositoryFailure.unreachable) => serverUnreachableMessage,
+  RepositoryException(failure: RepositoryFailure.serverError) => 'Greška na serveru. Pokušajte ponovo malo kasnije.',
+  // Kôd koji ova verzija aplikacije ne zna (npr. novo pravilo na serveru).
+  RepositoryException(failure: RepositoryFailure.refused) =>
+    'Server nije dozvolio ovu akciju. Osvežite podatke ili ažurirajte aplikaciju.',
+  RepositoryException(failure: RepositoryFailure.sessionExpired) => sessionExpiredMessage,
+  _ => failureMessage,
+};
+
+String roleLabel(Role role) => switch (role) {
+  Role.donor => 'Davalac',
+  Role.nurse => 'Medicinska sestra',
+  Role.coordinator => 'Koordinator',
+};
 
 const _weekdays = ['ponedeljak', 'utorak', 'sreda', 'četvrtak', 'petak', 'subota', 'nedelja'];
 const _months = [
@@ -93,17 +116,28 @@ const _months = [
 
 String _two(int n) => n.toString().padLeft(2, '0');
 
+// Vreme sa servera stiže u UTC-u; prikazuje se u lokalnom vremenu uređaja.
+
 /// 10. 11. 2026.
-String formatDate(DateTime t) => '${t.day}. ${t.month}. ${t.year}.';
+String formatDate(DateTime t) {
+  final local = t.toLocal();
+  return '${local.day}. ${local.month}. ${local.year}.';
+}
 
 /// 09:30
-String formatTime(DateTime t) => '${_two(t.hour)}:${_two(t.minute)}';
+String formatTime(DateTime t) {
+  final local = t.toLocal();
+  return '${_two(local.hour)}:${_two(local.minute)}';
+}
 
 /// 10. 11. 2026. u 09:30
 String formatDateTime(DateTime t) => '${formatDate(t)} u ${formatTime(t)}';
 
 /// utorak, 10. novembar
-String formatLongDate(DateTime t) => '${_weekdays[t.weekday - 1]}, ${t.day}. ${_months[t.month - 1]}';
+String formatLongDate(DateTime t) {
+  final local = t.toLocal();
+  return '${_weekdays[local.weekday - 1]}, ${local.day}. ${_months[local.month - 1]}';
+}
 
 /// 09:00–15:00
 String formatTimeRange(DateTime start, DateTime end) => '${formatTime(start)}–${formatTime(end)}';
