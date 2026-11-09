@@ -2,8 +2,9 @@ import 'package:domain/domain.dart';
 
 /// Port: jedino mesto kroz koje Bloc-ovi dolaze do podataka.
 ///
-/// U KT1 ga implementira lažni repozitorijum u memoriji (u svakoj aplikaciji),
-/// a od KT2 HTTP adapter ka serveru. Bloc-ovi i ekrani se tada ne menjaju.
+/// Implementiraju ga lažni repozitorijum u memoriji (demo i testovi) i
+/// HttpDonationRepository iz paketa api_client (server). Bloc-ovi i ekrani
+/// ne znaju koja je implementacija izabrana.
 /// Svaka metoda može da baci [RepositoryException].
 abstract interface class DonationRepository {
   /// Sve akcije, poređane po početku.
@@ -23,8 +24,10 @@ abstract interface class DonationRepository {
   /// jer kapacitet zavisi od termina drugih davalaca.
   Future<Result<Appointment>> book({required DonorId donorId, required DriveId driveId, required DateTime slotStart});
 
-  /// Čuva termin u novom stanju.
-  Future<Appointment> saveAppointment(Appointment appointment);
+  /// Čuva termin u novom stanju. Druga strana (od KT2 server) ponovo
+  /// proverava pravila i može da odbije, npr. ako je termin u međuvremenu promenjen.
+  Future<Result<Appointment>> saveAppointment(Appointment appointment);
 
-  Future<Donor> saveDonor(Donor donor);
+  /// Čuva profil davaoca; server ponovo proverava pravila profila.
+  Future<Result<Donor>> saveDonor(Donor donor);
 }

@@ -52,8 +52,12 @@ final class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       case Success(:final value):
         emit(ProfileLoaded(current.donor, saving: true));
         try {
-          final saved = await repository.saveDonor(value);
-          emit(ProfileLoaded(saved, notice: const ProfileSaved()));
+          switch (await repository.saveDonor(value)) {
+            case Success(value: final saved):
+              emit(ProfileLoaded(saved, notice: const ProfileSaved()));
+            case Failure(:final error):
+              emit(ProfileLoaded(current.donor, notice: ProfileRejected(error)));
+          }
         } on Exception catch (cause) {
           emit(ProfileLoaded(current.donor, notice: ProfileSaveFailed(cause)));
         }

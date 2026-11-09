@@ -57,8 +57,14 @@ final class MyAppointmentsBloc extends Bloc<MyAppointmentsEvent, MyAppointmentsS
       case Success(:final value):
         emit(current.copyWith(busyId: id));
         try {
-          final saved = await repository.saveAppointment(value);
-          await _reload(emit, notice: done(saved));
+          // Server ponovo proverava pravilo; ako odbije (npr. termin je u međuvremenu
+          // promenjen), prikazuje se razlog i podaci se ponovo učitavaju.
+          switch (await repository.saveAppointment(value)) {
+            case Success(value: final saved):
+              await _reload(emit, notice: done(saved));
+            case Failure(:final error):
+              await _reload(emit, notice: ActionRejected(error));
+          }
         } on Exception catch (cause) {
           emit(current.copyWith(notice: ActionFailed(cause)));
         }

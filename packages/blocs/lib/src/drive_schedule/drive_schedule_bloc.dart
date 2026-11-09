@@ -13,7 +13,8 @@ part 'drive_schedule_state.dart';
 ///
 /// Izbor i kursor su ovde, iznad rasporeda ekrana, pa ostaju kad se prozor suzi.
 final class DriveScheduleBloc extends Bloc<DriveScheduleEvent, DriveScheduleState> {
-  DriveScheduleBloc({required this.repository, required this.clock}) : super(const DriveScheduleLoading(null)) {
+  DriveScheduleBloc({required this.repository, required this.clock, required this.staff})
+    : super(const DriveScheduleLoading(null)) {
     on<DriveScheduleRequested>((event, emit) async {
       _pendingSelection = event.selectedId;
       emit(DriveScheduleLoading(event.driveId));
@@ -61,6 +62,9 @@ final class DriveScheduleBloc extends Bloc<DriveScheduleEvent, DriveScheduleStat
   final DonationRepository repository;
   final Clock clock;
 
+  /// Prijavljeni član osoblja: od njegove uloge zavisi koje akcije vidi (AccessPolicy).
+  final User staff;
+
   /// Izbor koji je stigao (npr. iz adrese) pre nego što su termini učitani.
   AppointmentId? _pendingSelection;
 
@@ -93,7 +97,13 @@ final class DriveScheduleBloc extends Bloc<DriveScheduleEvent, DriveScheduleStat
           drive: drive,
           appointments: appointments,
           donors: {for (final d in donors) d.id: d},
-          actions: {for (final a in appointments) a.id: staffActionsFor(a, now: now)},
+          actions: {
+            for (final a in appointments)
+              a.id: {
+                for (final action in staffActionsFor(a, now: now))
+                  if (AccessPolicy.canPerform(staff, action)) action,
+              },
+          },
           selectedId: selectedIndex < 0 ? null : wanted,
           cursor: selectedIndex >= 0 ? selectedIndex : cursor.clamp(0, appointments.length - 1).toInt(),
           notice: notice,
@@ -110,6 +120,10 @@ final class DriveScheduleBloc extends Bloc<DriveScheduleEvent, DriveScheduleStat
     final appointment = current.find(event.id);
     if (appointment == null) return;
 
+    if (!AccessPolicy.canPerform(staff, event.action)) {
+      emit(current.copyWith(notice: const StaffActionRejected(NotAllowed())));
+      return;
+    }
     final now = clock();
     final result = switch (event.action) {
       StaffAction.checkIn => checkIn(appointment, now: now),
@@ -125,14 +139,12 @@ final class DriveScheduleBloc extends Bloc<DriveScheduleEvent, DriveScheduleStat
       case Success(:final value):
         emit(current.copyWith(busyId: event.id));
         try {
-          final saved = await repository.saveAppointment(value);
-          await _load(
-            emit,
-            current.drive.id,
-            selectedId: saved.id,
-            cursor: current.cursor,
-            notice: StaffActionDone(event.action, saved),
-          );
+          final notice = switch (await repository.saveAppointment(value)) {
+            Success(value: final saved) => StaffActionDone(event.action, saved),
+            Failure(:final error) => StaffActionRejected(error),
+          };
+          // Posle akcije (i posle odbijanja) raspored se ponovo učitava sa servera.
+          await _load(emit, current.drive.id, selectedId: event.id, cursor: current.cursor, notice: notice);
         } on Exception catch (cause) {
           emit(current.copyWith(notice: StaffActionFailed(cause)));
         }
