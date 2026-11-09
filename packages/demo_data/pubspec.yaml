@@ -1,0 +1,12 @@
+name: demo_data
+description: Kap početni (demo) podaci - isti za server (baza) i za lažne repozitorijume u aplikacijama.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+resolution: workspace
+
+dependencies:
+  domain:
+    path: ../domain
